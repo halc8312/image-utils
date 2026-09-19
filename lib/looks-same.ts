@@ -70,11 +70,18 @@ const areColorsSame = ({
 
 // RGBA pixels composite over white before perceptual comparison, matching the
 // blend mode pixelmatch and looks-same use so alpha-only changes are seen as
-// visible differences.
-const blendOverWhite = ({ R, G, B, A }: RgbColor): RgbColor => {
+// visible differences. The result intentionally omits A: color-diff treats an
+// A field as a 0..1 opacity fraction, so passing a 0..255 byte would corrupt
+// the Lab conversion.
+const blendOverWhite = ({
+  R,
+  G,
+  B,
+  A,
+}: RgbColor): { R: number; G: number; B: number } => {
   const a = A / 255
   const blend = (c: number) => 255 + (c - 255) * a
-  return { R: blend(R), G: blend(G), B: blend(B), A: 255 }
+  return { R: blend(R), G: blend(G), B: blend(B) }
 }
 
 const parsePng = (bytes: Uint8Array): DecodedPng | null => {
@@ -320,9 +327,7 @@ class AntialiasingComparator {
       blended1.R * 0.29889531 +
       blended1.G * 0.58662247 +
       blended1.B * 0.11448223 -
-      (blended2.R * 0.29889531 +
-        blended2.G * 0.58662247 +
-        blended2.B * 0.11448223)
+      (blended2.R * 0.29889531 + blended2.G * 0.58662247 + blended2.B * 0.11448223)
     )
   }
 }
